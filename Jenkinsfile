@@ -1,85 +1,62 @@
 pipeline {
-    agent any  // Use any available agent (you can specify a label if needed)
+    agent any 
 
     environment {
         GIT_REPO_CICD = 'https://github.com/Ameeramahnoor/chef-cicd.git'
-        
-        // Set up other environment variables if necessary (e.g., paths, credentials)
+        GIT_REPO_CHEF = 'https://github.com/Ameeramahnoor/chefrepo.git'
     }
 
     stages {
         stage('Checkout SCM') {
             steps {
-                // Checkout CICD repository
                 echo 'Checking out the CICD repository...'
-                git url: "${GIT_REPO_CICD}"
+                git branch: 'main', url: "${GIT_REPO_CICD}"  // Specify the correct branch here
             }
         }
 
         stage('Checkout Code') {
             steps {
                 echo 'Cloning Chef repository...'
-                git url: "${GIT_REPO_CHEF}"
+                git branch: 'main', url: "${GIT_REPO_CHEF}" // Ensure the correct branch here as well
                 echo 'Repository cloned successfully!'
             }
         }
 
         stage('Run Chef Client') {
             steps {
-                script {
-                    try {
-                        echo 'Running Chef client...'
-
-                        // Ensure 'sh' is available on your system or use equivalent Windows commands if on a Windows system
-                        if (isUnix()) {
-                            sh 'chef-client --local-mode --runlist "recipe[myrecipe]"'  // Customize with actual runlist/commands
-                        } else {
-                            bat 'chef-client --local-mode --runlist "recipe[myrecipe]"'  // Use bat for Windows
-                        }
-
-                    } catch (Exception e) {
-                        echo "Error during Chef client execution: ${e.getMessage()}"
-                        currentBuild.result = 'FAILURE'
-                        error('Failed in Chef Client execution')
-                    }
-                }
+                echo 'Running Chef client...'
+                // Replace with the commands to run Chef client, if required
+                sh 'chef-client --local-mode --runlist "recipe[default]"'
             }
         }
 
         stage('Test Infrastructure') {
-            when {
-                expression { return currentBuild.result == null || currentBuild.result == 'SUCCESS' }
-            }
             steps {
-                echo 'Running infrastructure tests...'
-                // Add necessary test scripts here if needed (e.g., testing infrastructure setup after chef run)
+                echo 'Testing Infrastructure...'
+                // Add testing commands or scripts here
+                sh './test_infrastructure.sh'
             }
         }
 
         stage('Deployment') {
-            when {
-                expression { return currentBuild.result == null || currentBuild.result == 'SUCCESS' }
-            }
             steps {
-                echo 'Deploying to target environment...'
-                // Add steps for deployment like ansible, kubectl, etc.
+                echo 'Deploying application...'
+                // Add your deployment steps here, e.g., deployment to a server
+                sh './deploy.sh'
             }
         }
     }
 
     post {
         always {
-            // Clean workspace at the end
             echo 'Cleaning workspace...'
-            cleanWs() 
+            cleanWs() // Cleanup after build
         }
-
         success {
-            echo 'Build and deployment completed successfully!'
+            echo 'Build completed successfully!'
         }
-
         failure {
-            echo 'Build failed!'
+            echo 'Build failed. Check the logs!'
         }
     }
 }
