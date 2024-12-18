@@ -2,66 +2,80 @@ pipeline {
     agent any
 
     environment {
-        GIT_REPO_CICD = 'https://github.com/Ameeramahnoor/chef-cicd.git'
-        GIT_REPO_CHEF = 'https://github.com/Ameeramahnoor/chefrepo.git'
+        REPO_URL = 'https://github.com/Ameeramahnoor/chef-cicd.git'
     }
 
     stages {
-        stage('Checkout CICD Repository') {
+        stage('Checkout') {
             steps {
-                echo 'Checking out the CICD repository...'
-                git url: "${GIT_REPO_CICD}"
+                git url: "${REPO_URL}", branch: 'main'
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                script {
+                    try {
+                        bat '''
+                            echo "Building Project..."
+                            rem Example build step for Windows (you can replace it with your actual build commands)
+                            rem Example: call mvn clean install for Maven build
+                        '''
+                    } catch (Exception e) {
+                        echo "Build failed: ${e.message}"
+                        currentBuild.result = 'FAILURE'
+                        throw e
+                    }
+                }
             }
         }
 
-        stage('Checkout Chef Repository') {
+        stage('Test') {
             steps {
-                echo 'Cloning Chef repository...'
-                git url: "${GIT_REPO_CHEF}"
+                script {
+                    try {
+                        bat '''
+                            echo "Running tests..."
+                            rem Example test commands for Windows (replace with your testing tools)
+                            rem Example: call mvn test for Maven tests
+                        '''
+                    } catch (Exception e) {
+                        echo "Test failed: ${e.message}"
+                        currentBuild.result = 'FAILURE'
+                        throw e
+                    }
+                }
             }
         }
 
-        stage('Run Chef Client') {
+        stage('Deploy') {
             steps {
-                echo 'Running Chef client...'
-                powershell script: '''
-                    # Run Chef client on Windows
-                    Write-Host "Starting Chef client..."
-                    chef-client --local-mode --runlist 'recipe[my_recipe]'
-                '''
-            }
-        }
-
-        stage('Test Infrastructure') {
-            steps {
-                echo 'Testing Infrastructure...'
-                // You can replace this with any Windows-specific testing command.
-                powershell script: 'Write-Host "Testing infrastructure on Windows"'
-            }
-        }
-
-        stage('Deployment') {
-            steps {
-                echo 'Deploying application...'
-                // Deployment steps for Windows, e.g., copying files, restarting services
-                powershell script: '''
-                    Write-Host "Deploying on Windows..."
-                    # Add deployment steps like copying files, restarting services, etc.
-                '''
-            }
-        }
-
-        stage('Post Actions') {
-            steps {
-                echo 'Cleaning workspace...'
-                cleanWs()
+                script {
+                    try {
+                        bat '''
+                            echo "Deploying application..."
+                            rem Example deployment step (replace with your deployment command)
+                            rem Example: call deploy.bat
+                        '''
+                    } catch (Exception e) {
+                        echo "Deploy failed: ${e.message}"
+                        currentBuild.result = 'FAILURE'
+                        throw e
+                    }
+                }
             }
         }
     }
 
     post {
+        always {
+            echo 'This will run after all stages finish.'
+        }
+        success {
+            echo 'Build and Deployment successful!'
+        }
         failure {
-            echo 'Build failed. Check the logs!'
+            echo 'Something failed during the pipeline stages.'
         }
     }
 }
